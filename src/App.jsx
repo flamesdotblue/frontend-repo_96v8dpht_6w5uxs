@@ -2,7 +2,6 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Features from './components/Features';
 import ChatDemo from './components/ChatDemo';
-import Footer from './components/Footer';
 
 export default function App() {
   return (
@@ -71,7 +70,6 @@ export default function App() {
           </div>
         </section>
       </main>
-      <Footer />
     </div>
   );
 }
