@@ -16,36 +16,47 @@ function Message({ role, content }) {
 
 export default function ChatDemo() {
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Hi! I\'m your 6sense.ai agent. Ask me anything about your product or docs.' },
-    { role: 'user', content: 'Summarize our pricing for startups.' },
-    { role: 'assistant', content: 'We offer a generous free tier, followed by usage‑based plans. Start free, scale only when value is proven.' }
+    { role: 'assistant', content: "Hi! I'm your 6sense.ai agent. Ask me anything about your product or docs." },
   ]);
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
+  const [error, setError] = useState('');
   const endRef = useRef(null);
+
+  const BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, typing]);
 
-  const onSubmit = (e) => {
+  const generate = async (prompt) => {
+    try {
+      const res = await fetch(`${BASE_URL}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, creativity: 0.8, reasoning: true }),
+      });
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const data = await res.json();
+      return data.output || 'No output received';
+    } catch (e) {
+      console.error(e);
+      setError('Generation failed. Please try again.');
+      return 'Sorry, I had trouble generating a response right now.';
+    }
+  };
+
+  const onSubmit = async (e) => {
     e.preventDefault();
     const value = input.trim();
     if (!value) return;
+    setError('');
     setMessages((m) => [...m, { role: 'user', content: value }]);
     setInput('');
     setTyping(true);
-    setTimeout(() => {
-      setMessages((m) => [
-        ...m,
-        {
-          role: 'assistant',
-          content:
-            'This is a simulated reply. In production, connect to your backend endpoint to generate real answers tailored to your data.'
-        }
-      ]);
-      setTyping(false);
-    }, 800);
+    const output = await generate(value);
+    setMessages((m) => [...m, { role: 'assistant', content: output }]);
+    setTyping(false);
   };
 
   return (
@@ -66,6 +77,9 @@ export default function ChatDemo() {
                 <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-gray-400" />
                 6sense.ai is typing…
               </div>
+            )}
+            {error && (
+              <div className="text-xs text-red-600">{error}</div>
             )}
             <div ref={endRef} />
           </div>
